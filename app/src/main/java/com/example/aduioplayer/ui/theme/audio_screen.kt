@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,27 +30,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.aduioplayer.TracksViewModel
 import com.example.aduioplayer.frservice.Actions
 import com.example.aduioplayer.frservice.AudioForeGroundService
-import com.example.aduioplayer.navigation.Screens
 
 @Composable
 fun <T : Audio> AudiosScreen(
@@ -62,7 +56,7 @@ fun <T : Audio> AudiosScreen(
     dropDownActions: List<DropDownActions>,
 ) {
     val context = LocalContext.current
-    val currentTrackList = tracksViewModel.currentTrackList.collectAsState()
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(audioList, key = { it.id }) {
             AudioTrackCard(
@@ -70,14 +64,25 @@ fun <T : Audio> AudiosScreen(
                     it.name, it.id, it.uri, it.length
                 ),
                 onClick = {
-                    if(tracksViewModel.currentTrackList.value
-                        != audioList){
+                    if (tracksViewModel.currentTrackList.value
+                        != audioList
+                    ) {
                         tracksViewModel.newCurrentTrackList(audioList)
                     }
-                     tracksViewModel.newCurrentTrack(AudioTrack(it.name, it.id, it.uri, it.length))
-                     Intent(context.applicationContext,AudioForeGroundService::class.java).also {
-                         it.action = Actions.Select.name
-                        Log.d("audio foreground service intent action:",it.action?:"ssa")
+                    tracksViewModel.newCurrentTrack(
+                        AudioTrack(
+                            it.name,
+                            it.id,
+                            it.uri,
+                            it.length
+                        )
+                    )
+                    Intent(
+                        context.applicationContext,
+                        AudioForeGroundService::class.java
+                    ).also {
+                        it.action = Actions.Select.name
+                        Log.d("audio foreground service intent action:", it.action ?: "ssa")
                         context.startService(it)
                     }
                 }, dropDownActions,
@@ -86,7 +91,7 @@ fun <T : Audio> AudiosScreen(
         }
 
     }
-}
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +174,7 @@ fun AudioTrackCard(
                 Column {
 
                     val playlists = playListViewModel.playLists.collectAsState(initial = listOf())
-                        playlists.value.forEach {
+                    playlists.value.forEach {
                         Row(
                             Modifier
                                 .fillMaxWidth()
@@ -211,18 +216,3 @@ fun AudioTrackCard(
         }
     }
 }
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun AudioScreenModal(
-//    audioTrack: AudioTrack,
-//    isOpen: Boolean,
-//    onDismissRequest: () -> Unit,
-//    playListViewModel: PlayListViewModel
-//) {
-//    ModalBottomSheet(onDismissRequest = { onDismissRequest() }) {
-//         playListViewModel.playLists.value.forEach {
-//
-//         }
-//    }
-//}

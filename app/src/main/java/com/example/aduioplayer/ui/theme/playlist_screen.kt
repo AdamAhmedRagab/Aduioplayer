@@ -1,6 +1,4 @@
 package com.example.aduioplayer.ui.theme
-
-import android.media.MediaPlayer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -26,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -57,7 +54,7 @@ fun PlayListScreen(
             Text(text = "New PlayList")
         }
         if (isCreatingPlayList) {
-            AlertDialog(onDismissRequest = { isCreatingPlayList = false }) {
+            BasicAlertDialog(onDismissRequest = { isCreatingPlayList = false }) {
                 Column(
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -77,7 +74,7 @@ fun PlayListScreen(
                         Button(onClick = {
                             tracksViewModel.newPlayList = tracksViewModel.newPlayList.copy(
                                 name = playListName,
-                                )
+                            )
                             playListViewModel.createPlayList(tracksViewModel.newPlayList)
                         }) {
                             Text(text = "OK")
@@ -88,7 +85,7 @@ fun PlayListScreen(
                 }
             }
         }
-        LazyColumn() {
+        LazyColumn {
             items(items = playListViewModel.playLists.value, key = { it.id }) {
                 Box {
                     var isOpen by rememberSaveable {
@@ -103,11 +100,14 @@ fun PlayListScreen(
                                 vertical = 10.dp
                             )
                             .height(70.dp)
-                            .clickable {  navController.navigate(Screens.AudiosTrackScreen.name + "/${it.id}") }) {
+                            .clickable { navController.navigate(Screens.AudiosTrackScreen.name + "/${it.id}") }) {
                         Row {
                         Text(text = it.name, Modifier.padding(horizontal = 10.dp))
-                        IconButton(onClick = { isOpen=true}) {
-                            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "",Modifier.wrapContentWidth(Alignment.End))
+                            IconButton(
+                                onClick = { isOpen = true },
+                                Modifier.wrapContentWidth(Alignment.End)
+                            ) {
+                                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "")
                         }
                     }}
                     DropdownMenu(expanded =isOpen, onDismissRequest = { isOpen=false }) {

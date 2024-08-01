@@ -1,24 +1,18 @@
 package com.example.aduioplayer.frservice
 
 import android.Manifest
-import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.aduioplayer.TracksViewModel
 import com.example.aduioplayer.ui.theme.AudioTrack
 import com.example.aduioplayer.ui.theme.dataRepo
 
@@ -92,8 +86,8 @@ class AudioForeGroundService : Service() {
             }}
 
             Actions.Shuffle.name -> {
+                fun shufflePlay() {
                     mediaPlayer.reset()
-                while (true) {
                     val ss = currentTrackList.value.random()
                     mediaPlayer.setDataSource(
                         applicationContext,
@@ -112,10 +106,12 @@ class AudioForeGroundService : Service() {
                         mediaPlayer.start()
                     }
                     mediaPlayer.setOnCompletionListener {
-                        mediaPlayer.reset()
+                        shufflePlay()
                     }
                 }
+                shufflePlay()
             }
+
 
             Actions.Cancel.name ->{ stopSelf();dataRepo.isPlaying(false);dataRepo.newCurrentTrack(
                 AudioTrack("", uri = Uri.EMPTY, length = 0)
@@ -150,9 +146,14 @@ class AudioForeGroundService : Service() {
 
         return START_STICKY
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer.release()
+    }
 }
 
-enum class Actions() {
+enum class Actions {
 
     Play, Pause, NEXT, PREV, Select, Shuffle, Cancel
 }
