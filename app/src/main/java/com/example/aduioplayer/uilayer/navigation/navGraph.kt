@@ -109,8 +109,8 @@ fun Nav(mediaPlayer: MediaPlayer) {
                                     tracksViewModel = audioViewModel,
                                     playListViewModel,
                                     listOf(DropDownActions("Share") {
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = it.uri
+                                        val intent = Intent(Intent.ACTION_SEND).apply {
+                                            setDataAndType(it.uri, "audio/*")
                                         }
                                         if (intent.resolveActivity(localContext.packageManager) != null) {
                                             localContext.startActivity(intent)
