@@ -252,5 +252,14 @@ class AudioForeGroundService : Service() {
 
 enum class Actions {
 
-    Play, Pause, NEXT, PREV, Select, Shuffle, Cancel, PlayList, Loop, AutoNext
+    Play,
+    Pause,
+    NEXT,
+    PREV,
+    Select,
+    Shuffle,
+    Cancel,
+    PlayList,
+    Loop,
+    AutoNext
 }
