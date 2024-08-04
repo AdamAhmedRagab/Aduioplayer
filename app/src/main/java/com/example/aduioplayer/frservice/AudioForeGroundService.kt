@@ -7,19 +7,27 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.example.aduioplayer.db.dataRepo
 import com.example.aduioplayer.ui.theme.AudioTrack
-import com.example.aduioplayer.ui.theme.dataRepo
 
 class AudioForeGroundService : Service() {
-    private val mediaPlayer = MediaPlayer()
-    override fun onBind(p0: Intent?): IBinder? {
-        return null
+    val mediaPlayer = MediaPlayer()
+    override fun onBind(p0: Intent?): IBinder {
+        return mediaPlayerBinder
+    }
+
+    private val mediaPlayerBinder = MediaPlayerBinder()
+
+    inner class MediaPlayerBinder : Binder() {
+        fun getService(): AudioForeGroundService = this@AudioForeGroundService
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -43,8 +51,8 @@ class AudioForeGroundService : Service() {
             Actions.NEXT.name -> {
                 Log.d("MediaPlayer", "next audio will be played")
                 val trackkWillBePlayed =
-                    if (currentTrackList.value.last().id != currentTrack.value.id) currentTrackList.value[currentTrackList.value.indexOfFirst { it.id ==currentTrack.value.id }
-                            +1]
+                    if (currentTrackList.value.last().id != currentTrack.value.id) currentTrackList.value[currentTrackList.value.indexOfFirst { it.id == currentTrack.value.id }
+                            + 1]
                     else currentTrackList.value.first()
                 dataRepo.isPlaying(true)
                 dataRepo.newCurrentTrack(
@@ -67,23 +75,26 @@ class AudioForeGroundService : Service() {
             }
 
             Actions.PREV.name -> {
-              if (currentTrackList.value.isNotEmpty()){
-                  val trackkWillBePlayed =
-                      if (currentTrackList.value.first().id != currentTrack.value.id) currentTrackList.value[currentTrackList.value.indexOfFirst { it.id ==currentTrack.value.id }
-                              -1]
-                      else currentTrackList.value.last()
+                if (currentTrackList.value.isNotEmpty()) {
+                    val trackkWillBePlayed =
+                        if (currentTrackList.value.first().id != currentTrack.value.id) currentTrackList.value[currentTrackList.value.indexOfFirst { it.id == currentTrack.value.id }
+                                - 1]
+                        else currentTrackList.value.last()
 
-                  dataRepo.isPlaying(true)
-                  AudioActions.Start(applicationContext, trackkWillBePlayed.uri, mediaPlayer).start()
-                  dataRepo.newCurrentTrack(
-                      AudioTrack(
-                          trackkWillBePlayed.name,
-                          trackkWillBePlayed.id,
-                          trackkWillBePlayed.uri,
-                          trackkWillBePlayed.length
-                      ))
+                    dataRepo.isPlaying(true)
+                    AudioActions.Start(applicationContext, trackkWillBePlayed.uri, mediaPlayer)
+                        .start()
+                    dataRepo.newCurrentTrack(
+                        AudioTrack(
+                            trackkWillBePlayed.name,
+                            trackkWillBePlayed.id,
+                            trackkWillBePlayed.uri,
+                            trackkWillBePlayed.length
+                        )
+                    )
 
-            }}
+                }
+            }
 
             Actions.Shuffle.name -> {
                 fun shufflePlay() {
@@ -112,10 +123,97 @@ class AudioForeGroundService : Service() {
                 shufflePlay()
             }
 
+            Actions.Cancel.name -> {
+                dataRepo.isPlaying(false);dataRepo.newCurrentTrack(
+                    AudioTrack("", uri = Uri.EMPTY, length = 0)
+                );mediaPlayer.reset();stopSelf()
+            }
 
-            Actions.Cancel.name ->{ stopSelf();dataRepo.isPlaying(false);dataRepo.newCurrentTrack(
-                AudioTrack("", uri = Uri.EMPTY, length = 0)
-            );mediaPlayer.reset()}
+            Actions.PlayList.name -> {
+                fun playList(index: Int) {
+                    val trackkWillBePlayed = dataRepo.currentTrackList.value.getOrNull(index)
+                    trackkWillBePlayed?.let {
+                        dataRepo.isPlaying(true)
+                        dataRepo.newCurrentTrack(
+                            AudioTrack(
+                                trackkWillBePlayed.name,
+                                trackkWillBePlayed.id,
+                                trackkWillBePlayed.uri,
+                                trackkWillBePlayed.length
+                            )
+                        )
+                        AudioActions.Start(applicationContext, trackkWillBePlayed.uri, mediaPlayer)
+                            .start()
+                        mediaPlayer.setOnCompletionListener {
+                            if (currentTrack.value.id
+                                != trackkWillBePlayed.id
+                            ) {
+                                playList(index + 1)
+                            }
+                        }
+                    }
+
+                }
+                playList(0)
+            }
+
+            Actions.Loop.name -> {
+                fun audioLoop() {
+                    if (mediaPlayer.isPlaying) {
+                        mediaPlayer.apply {
+                            setOnCompletionListener {
+                                AudioActions.Start(
+                                    applicationContext,
+                                    currentTrack.value.uri,
+                                    mediaPlayer
+                                )
+                                    .start()
+                                mediaPlayer.setOnCompletionListener {
+                                    audioLoop()
+                                }
+                            }
+                        }
+                    } else {
+                        AudioActions.Start(
+                            applicationContext,
+                            currentTrack.value.uri,
+                            mediaPlayer
+                        )
+                            .start()
+                        mediaPlayer.setOnCompletionListener {
+                            audioLoop()
+                        }
+                    }
+                }
+                audioLoop()
+            }
+
+            Actions.AutoNext.name -> {
+                if (currentTrackList.value.isNotEmpty()) {
+                    fun autoNext() {
+                        val trackkWillBePlayed =
+                            if (currentTrackList.value.last().id != currentTrack.value.id) currentTrackList.value[currentTrackList.value.indexOfFirst { it.id == currentTrack.value.id }
+                                    + 1]
+                            else currentTrackList.value.first()
+                        dataRepo.isPlaying(true)
+                        dataRepo.newCurrentTrack(
+                            AudioTrack(
+                                trackkWillBePlayed.name,
+                                trackkWillBePlayed.id,
+                                trackkWillBePlayed.uri,
+                                trackkWillBePlayed.length
+                            )
+                        )
+                        AudioActions.Start(applicationContext, trackkWillBePlayed.uri, mediaPlayer)
+                            .start()
+                        mediaPlayer.setOnCompletionListener { autoNext() }
+                    }
+                    autoNext()
+                } else {
+                    Toast.makeText(applicationContext, "the playlist is empty", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
         }
         val notifaction = NotificationCompat.Builder(this, "Audio_controller")
             .setContentTitle(currentTrack.value.name)
@@ -125,7 +223,6 @@ class AudioForeGroundService : Service() {
                 Actions.NEXT.name,
                 Actions.Play.name,
                 Actions.Pause.name,
-
             )
         ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -133,15 +230,15 @@ class AudioForeGroundService : Service() {
             } else {
                 this.startForeground(1, notifaction)
             }
+        } else {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                NotificationManagerCompat.from(this).notify(1, notifaction)
+            }
         }
-        else{
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            NotificationManagerCompat.from(this).notify(1, notifaction)
-        }}
 
 
         return START_STICKY
@@ -155,5 +252,5 @@ class AudioForeGroundService : Service() {
 
 enum class Actions {
 
-    Play, Pause, NEXT, PREV, Select, Shuffle, Cancel
+    Play, Pause, NEXT, PREV, Select, Shuffle, Cancel, PlayList, Loop, AutoNext
 }

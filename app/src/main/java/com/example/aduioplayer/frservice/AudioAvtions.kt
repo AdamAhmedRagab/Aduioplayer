@@ -22,10 +22,6 @@ sealed class AudioActions(uri: Uri = Uri.EMPTY, mediaPlayer: MediaPlayer) {
                         Log.d("MediaPlayer error accourd", "$what,$extra")
                         true
                     }
-                    setOnCompletionListener {
-                        Log.d("MediaPlayer"," the audio is finished")
-                        reset()
-                    }
                     setDataSource(context, uri)
                     prepareAsync()
                 }
