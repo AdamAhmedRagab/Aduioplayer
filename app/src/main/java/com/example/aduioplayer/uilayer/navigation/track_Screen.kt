@@ -46,7 +46,6 @@ fun TrackScreen(
 ) {
     val isPlaying = tracksListViewModel.isPlaying.collectAsState()
     val currentTrack = tracksListViewModel.currentTrack.collectAsState()
-
     // Remember the current position and duration of the track
     val currentPosition = remember { mutableFloatStateOf(0f) }
     val duration = remember { mutableFloatStateOf(0f) }
